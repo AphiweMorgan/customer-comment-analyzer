@@ -7,21 +7,31 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 public class CommentAnalyzer {
 	
 	private File file;
-	
+	private Map<String, String> metricMap = new HashMap<>();
 	public CommentAnalyzer(File file) {
 		this.file = file;
 	}
-	
+	private void populateMetrics() throws IOException {
+        File metricsFile = new File("docs/metrics/metrics.txt");
+        BufferedReader reader = new BufferedReader(new FileReader(metricsFile));
+        String line = null;
+        while ((line = reader.readLine()) != null) {
+            String[] metric = line.split(":");
+            metricMap.put(metric[0], metric[1]);
+        }
+    }
 	public Map<String, Integer> analyze() {
 		
 		Map<String, Integer> resultsMap = new HashMap<>();
-		
 		try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
-			
+			populateMetrics();
+            Set<String> metricKeys = metricMap.keySet();
+
 			String line = null;
 			while ((line = reader.readLine()) != null) {
 				
@@ -29,15 +39,13 @@ public class CommentAnalyzer {
 					
 					incOccurrence(resultsMap, "SHORTER_THAN_15");
 
-				} else if (line.contains("Mover")) {
-
-					incOccurrence(resultsMap, "MOVER_MENTIONS");
-				
-				} else if (line.contains("Shaker")) {
-
-					incOccurrence(resultsMap, "SHAKER_MENTIONS");
-				
 				}
+                for(String k: metricKeys){
+                    String desc = metricMap.get(k);
+                    if(line.toUpperCase().contains(k.toUpperCase())){
+                        incOccurrence(resultsMap, desc);
+                    }
+                }
 			}
 			
 		} catch (FileNotFoundException e) {
